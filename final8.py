@@ -1,6 +1,6 @@
 import json
 import tkinter as tk
-from tkinter import messagebox, ttk, filedialog
+from tkinter import messagebox, ttk
 from PIL import Image, ImageTk
 
 
@@ -63,56 +63,77 @@ class SocialMediaManager:
         else:
             return None  # Return None if user not found
 
-    def create_post(self, username, content, post_type):
-        post_id = len(self.posts) + 1
-        post = {'id': post_id, 'author': username, 'likes': 0, 'comments': [], 'type': post_type}
-        if post_type == "text":
-            post['content'] = content
-        elif post_type == "image":
-            post['image_path'] = content
-        self.posts.append(post)
-        self.users[username]['posts'].append(post_id)
-        self.save_data()
-        return post
+    def follow_user(self, current_user, user_to_follow):
+        if current_user in self.users and user_to_follow in self.users:
+            if user_to_follow not in self.users[current_user]['friends']:
+                self.users[current_user]['friends'].append(user_to_follow)
+                self.users[user_to_follow]['friends'].append(current_user)
+                self.save_data()
 
-    def send_friend_request(self, from_user, to_user):
-        if to_user in self.users and from_user not in self.users[to_user]['friend_requests']:
-            self.users[to_user]['friend_requests'].append(from_user)
-            self.save_data()
 
-    def accept_friend_request(self, user, friend):
-        if friend in self.users[user]['friend_requests']:
-            self.users[user]['friends'].append(friend)
-            self.users[friend]['friends'].append(user)
-            self.users[user]['friend_requests'].remove(friend)
-            self.save_data()
+class UserSearchApp:
+    def __init__(self, root):
+        self.manager = SocialMediaManager()
 
-    def decline_friend_request(self, user, friend):
-        if friend in self.users[user]['friend_requests']:
-            self.users[user]['friend_requests'].remove(friend)
-            self.save_data()
+        self.root = root
+        self.root.title("Search User")
+        self.root.geometry("300x150")
 
-    def view_friend_requests(self, user):
-        return self.users[user]['friend_requests']
+        self.search_button = tk.Button(root, text="Open Search", command=self.open_search_window)
+        self.search_button.pack(pady=20)
 
-    def send_message(self, from_user, to_user, message):
-        if to_user in self.users and from_user in self.users:
-            self.users[to_user]['messages_to_you'].append({'from': from_user, 'content': message})
-            self.users[from_user]['messages_from_you'].append({'to': to_user, 'content': message})
-            self.save_data()
+    def open_search_window(self):
+        self.search_window = tk.Toplevel(self.root)
+        self.search_window.title("Search for User")
+        self.search_window.geometry("300x300")
 
-    def view_inbox(self, user):
-        return self.users[user]['messages_to_you'], self.users[user]['messages_from_you']
+        # Label and Entry for search input
+        tk.Label(self.search_window, text="Enter username:").pack(pady=5)
+        self.search_entry = tk.Entry(self.search_window)
+        self.search_entry.pack(pady=5)
 
-    def like_post(self, post_id, user):
-        if post_id in self.posts and user in self.users:
-            self.posts[post_id]['likes'] += 1
-            self.save_data()
+        # Search button
+        search_button = tk.Button(self.search_window, text="Search", command=self.search_user)
+        search_button.pack(pady=5)
 
-    def comment_on_post(self, post_id, user, comment):
-        if post_id in self.posts:
-            self.posts[post_id]['comments'].append({'user': user, 'text': comment})
-            self.save_data()
+        self.result_frame = tk.Frame(self.search_window)
+        self.result_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+
+    def search_user(self):
+        for widget in self.result_frame.winfo_children():
+            widget.destroy()  # Clear previous results
+
+        username = self.search_entry.get()
+        user_data = self.manager.user_search(username)
+        if user_data:
+            self.display_user_bar(username)
+        else:
+            tk.Label(self.result_frame, text="User not found.", fg="red").pack()
+
+    def display_user_bar(self, username):
+        bar_frame = tk.Frame(self.result_frame, bd=2, relief="groove", padx=10, pady=5)
+        bar_frame.pack(fill=tk.X, pady=5)
+
+        # Username label
+        user_label = tk.Label(bar_frame, text=username, font=("Arial", 12, "bold"))
+        user_label.pack(side=tk.LEFT)
+
+        # Follow button
+        follow_button = tk.Button(bar_frame, text="Follow", command=lambda: self.follow_user(username))
+        follow_button.pack(side=tk.RIGHT, padx=5)
+
+        # View Profile button
+        profile_button = tk.Button(bar_frame, text="View Profile", command=lambda: self.view_profile(username))
+        profile_button.pack(side=tk.RIGHT, padx=5)
+
+    def follow_user(self, username):
+        # Assuming 'current_user' is available, replace 'current_user' with the actual current logged-in user
+        current_user = "current_user"
+        self.manager.follow_user(current_user, username)
+        messagebox.showinfo("Follow", f"You followed {username}.")
+
+    def view_profile(self, username):
+        user_profile_page(self.search_window, self.manager, username)
 
 
 def user_profile_page(main_window, s_manager, user_name):
@@ -184,49 +205,6 @@ def user_profile_page(main_window, s_manager, user_name):
             post_label.pack(pady=5, anchor=tk.CENTER)
             details_button = tk.Button(post_frame, text="Details", command=lambda p=post: show_post_details(p))
             details_button.pack(anchor=tk.CENTER)
-
-        post_frame.update_idletasks()  # Ensure geometry is calculated
-        canvas.configure(scrollregion=canvas.bbox("all"))
-
-    back_button = tk.Button(main_window, text="Back", command=main_window.destroy)
-    back_button.pack(side="bottom", pady=10)
-
-
-class UserSearchApp:
-    def __init__(self, root):
-        self.manager = SocialMediaManager()
-
-        self.root = root
-        self.root.title("Search User")
-        self.root.geometry("300x150")
-
-        self.search_button = tk.Button(root, text="Open Search", command=self.open_search_window)
-        self.search_button.pack(pady=20)
-
-    def open_search_window(self):
-        self.search_window = tk.Toplevel(self.root)
-        self.search_window.title("Search for User")
-        self.search_window.geometry("300x200")
-
-        # Label and Entry for search input
-        tk.Label(self.search_window, text="Enter username:").pack(pady=5)
-        self.search_entry = tk.Entry(self.search_window)
-        self.search_entry.pack(pady=5)
-
-        # Search button
-        search_button = tk.Button(self.search_window, text="Search", command=self.search_user)
-        search_button.pack(pady=5)
-
-        self.result_label = tk.Label(self.search_window, text="")
-        self.result_label.pack(pady=5)
-
-    def search_user(self):
-        username = self.search_entry.get()
-        user_data = self.manager.user_search(username)
-        if user_data:
-            user_profile_page(self.search_window, self.manager, username)
-        else:
-            self.result_label.config(text="User not found.")
 
 
 if __name__ == "__main__":
