@@ -69,6 +69,10 @@ class SocialMediaManager:
                 self.users[current_user]['friends'].append(user_to_follow)
                 self.users[user_to_follow]['friends'].append(current_user)
                 self.save_data()
+                return True
+            else:
+                return False  # Already following
+        return False  # One of the users does not exist
 
 
 class UserSearchApp:
@@ -119,18 +123,23 @@ class UserSearchApp:
         user_label.pack(side=tk.LEFT)
 
         # Follow button
-        follow_button = tk.Button(bar_frame, text="Follow", command=lambda: self.follow_user(username))
+        follow_button = tk.Button(bar_frame, text="Follow", command=lambda: self.follow_user(username, follow_button))
         follow_button.pack(side=tk.RIGHT, padx=5)
 
         # View Profile button
         profile_button = tk.Button(bar_frame, text="View Profile", command=lambda: self.view_profile(username))
         profile_button.pack(side=tk.RIGHT, padx=5)
 
-    def follow_user(self, username):
+    def follow_user(self, username, follow_button):
         # Assuming 'current_user' is available, replace 'current_user' with the actual current logged-in user
         current_user = "current_user"
-        self.manager.follow_user(current_user, username)
-        messagebox.showinfo("Follow", f"You followed {username}.")
+        success = self.manager.follow_user(current_user, username)
+
+        if success:
+            messagebox.showinfo("Follow", f"You followed {username}.")
+            follow_button.config(text="Following", state=tk.DISABLED)
+        else:
+            messagebox.showwarning("Follow", f"You are already following {username}!")
 
     def view_profile(self, username):
         user_profile_page(self.search_window, self.manager, username)
@@ -170,7 +179,7 @@ def user_profile_page(main_window, s_manager, user_name):
     frame2.pack(pady=10)
 
     tk.Label(frame2, text="Bio", font=("Times New Roman", 13)).pack()
-    tk.Label(frame2, text=user_data.get('bio', 'No bio'), wraplength=400, justify="left", font=("Times New Roman", 12), fg="purple").pack()
+    tk.Label(frame2, text=user_data.get('Bio', 'No bio'), wraplength=400, justify="left", font=("Times New Roman", 12), fg="purple").pack()
 
     # Frame3: posts
     frame3 = tk.Frame(main_window, highlightbackground="purple", highlightthickness=2)
@@ -200,13 +209,8 @@ def user_profile_page(main_window, s_manager, user_name):
                 image = image.resize((250, 250))  # Resize the image to fit
                 photo = ImageTk.PhotoImage(image)
                 post_label = tk.Label(post_frame, image=photo)
-                post_label.image = photo  # Keep a reference to avoid garbage collection
-
-            post_label.pack(pady=5, anchor=tk.CENTER)
-            details_button = tk.Button(post_frame, text="Details", command=lambda p=post: show_post_details(p))
-            details_button.pack(anchor=tk.CENTER)
-
-
+                post_label.image = photo  # Keep a reference to avoid garbage
+                
 if __name__ == "__main__":
     root = tk.Tk()
     app = UserSearchApp(root)
