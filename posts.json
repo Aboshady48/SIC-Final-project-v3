@@ -1,1 +1,13 @@
-{}
+{
+    "1": {
+        "author": "omnia",
+        "post_id": 1,
+        "likes": 1,
+        "liked_by": [
+            "omnia"
+        ],
+        "comments": [],
+        "type": "image",
+        "image_path": "D:/DATA/SIC/Final project 3/360_F_391461057_5P0BOWl4lY442Zoo9rzEeJU0S2c1WDZR.jpg"
+    }
+}

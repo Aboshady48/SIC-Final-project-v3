@@ -63,16 +63,35 @@ class SocialMediaManager:
         else:
             return None  # Return None if user not found
 
-    def follow_user(self, current_user, user_to_follow):
-        if current_user in self.users and user_to_follow in self.users:
-            if user_to_follow not in self.users[current_user]['friends']:
-                self.users[current_user]['friends'].append(user_to_follow)
-                self.users[user_to_follow]['friends'].append(current_user)
-                self.save_data()
-                return True
-            else:
-                return False  # Already following
-        return False  # One of the users does not exist
+    def send_friend_request(self, current_user, user_to_follow):
+        if current_user not in self.users or user_to_follow not in self.users:
+            print("One of the users does not exist.")
+            return False  # One of the users does not exist
+
+        # Check if the users are the same
+        if current_user == user_to_follow:
+            print("Cannot send friend request to yourself.")
+            return False  # A user cannot send a friend request to themselves
+
+        # Check if they are already friends
+        if user_to_follow in self.users[current_user].get('friends', []):
+            print("You are already friends.")
+            return False  # Already friends
+
+        # Check if a friend request already exists
+        if user_to_follow in self.users[current_user].get('friend_requests', []):
+            print("Friend request already sent.")
+            return False  # Friend request already sent
+
+        # Add friend request
+        if 'friend_requests' not in self.users[user_to_follow]:
+            self.users[user_to_follow]['friend_requests'] = []
+        self.users[user_to_follow]['friend_requests'].append(current_user)
+
+        # Optionally, save data after sending the request
+        self.save_data()
+        print(f"Friend request sent from {current_user} to {user_to_follow}.")
+        return True  # Friend request sent successfully
 
 
 class UserSearchApp:
@@ -85,6 +104,9 @@ class UserSearchApp:
 
         self.search_button = tk.Button(root, text="Open Search", command=self.open_search_window)
         self.search_button.pack(pady=20)
+
+        # Assuming the current user's username is defined here for testing purposes.
+        self.current_user = "current_user"  # Replace this with the actual logged-in user
 
     def open_search_window(self):
         self.search_window = tk.Toplevel(self.root)
@@ -110,11 +132,13 @@ class UserSearchApp:
         username = self.search_entry.get()
         user_data = self.manager.user_search(username)
         if user_data:
-            self.display_user_bar(username)
+            # Retrieve user's posts
+            post_data = [post for post in self.manager.posts if post['author'] == username]
+            self.display_user_bar(username, post_data)  # Pass posts data
         else:
             tk.Label(self.result_frame, text="User not found.", fg="red").pack()
 
-    def display_user_bar(self, username):
+    def display_user_bar(self, username, posts):
         bar_frame = tk.Frame(self.result_frame, bd=2, relief="groove", padx=10, pady=5)
         bar_frame.pack(fill=tk.X, pady=5)
 
@@ -123,23 +147,34 @@ class UserSearchApp:
         user_label.pack(side=tk.LEFT)
 
         # Follow button
-        follow_button = tk.Button(bar_frame, text="Follow", command=lambda: self.follow_user(username, follow_button))
+        follow_button = tk.Button(bar_frame, text="Send Friend Request", command=lambda: self.send_friend_request(username, follow_button))
         follow_button.pack(side=tk.RIGHT, padx=5)
 
         # View Profile button
         profile_button = tk.Button(bar_frame, text="View Profile", command=lambda: self.view_profile(username))
         profile_button.pack(side=tk.RIGHT, padx=5)
 
-    def follow_user(self, username, follow_button):
-        # Assuming 'current_user' is available, replace 'current_user' with the actual current logged-in user
-        current_user = "current_user"
-        success = self.manager.follow_user(current_user, username)
+        # Display user posts below the username
+        if posts:
+            posts_frame = tk.Frame(bar_frame)
+            posts_frame.pack(fill=tk.X, pady=5)
+
+            tk.Label(posts_frame, text="Posts:", font=("Arial", 10, "bold")).pack(anchor="w")
+
+            for post in posts:
+                post_label = tk.Label(posts_frame, text=post['title'], wraplength=200, justify="left", font=("Arial", 9))
+                post_label.pack(anchor="w")
+        else:
+            tk.Label(bar_frame, text="No posts available.", fg="gray").pack()
+
+    def send_friend_request(self, username, follow_button):
+        success = self.manager.send_friend_request(self.current_user, username)
 
         if success:
-            messagebox.showinfo("Follow", f"You followed {username}.")
-            follow_button.config(text="Following", state=tk.DISABLED)
+            messagebox.showinfo("Friend Request", f"You sent a friend request to {username}.")
+            follow_button.config(text="Request Sent", state=tk.DISABLED)
         else:
-            messagebox.showwarning("Follow", f"You are already following {username}!")
+            messagebox.showwarning("Friend Request", f"Could not send a friend request to {username}.")
 
     def view_profile(self, username):
         user_profile_page(self.search_window, self.manager, username)
@@ -185,32 +220,21 @@ def user_profile_page(main_window, s_manager, user_name):
     frame3 = tk.Frame(main_window, highlightbackground="purple", highlightthickness=2)
     frame3.pack(pady=10, fill="both", expand=True)
 
-    # Scrollbar
-    style = ttk.Style()
-    style.theme_use("default")
-    style.configure("Vertical.TScrollbar", background="lavender", troughcolor="lavender", arrowcolor="purple")
-    canvas = tk.Canvas(frame3, height=400)
-    canvas.pack(side=tk.LEFT, fill="both", expand=True)
-    scrollbar = ttk.Scrollbar(frame3, orient=tk.VERTICAL, command=canvas.yview, style="Vertical.TScrollbar")
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    canvas.configure(yscrollcommand=scrollbar.set)
-    post_frame = tk.Frame(canvas)
-    canvas.create_window((250, 0), window=post_frame, anchor="n", width=500)
+    tk.Label(frame3, text="Posts", font=("Times New Roman", 15)).pack(anchor="w")
 
-    if not post_data:  # Empty
-        post_label = tk.Label(post_frame, text="No posts to show!", wraplength=400, justify="left", font=("Times New Roman", 12), fg="gray")
-        post_label.pack(pady=5, anchor=tk.CENTER)
-    else:
-        for post in post_data:
-            if post['type'] == 'text':
-                post_label = tk.Label(post_frame, text=post['content'], wraplength=400, justify="left")
-            elif post['type'] == 'image':
-                image = Image.open(post['image_path'])
-                image = image.resize((250, 250))  # Resize the image to fit
-                photo = ImageTk.PhotoImage(image)
-                post_label = tk.Label(post_frame, image=photo)
-                post_label.image = photo  # Keep a reference to avoid garbage
-                
+    for post in post_data:
+        post_frame = tk.Frame(frame3, highlightbackground="gray", highlightthickness=1, bd=2)
+        post_frame.pack(pady=5, fill="both")
+
+        tk.Label(post_frame, text=post['title'], font=("Times New Roman", 12, "bold")).pack(anchor="w")
+        post_label = tk.Label(post_frame, text=post['content'], wraplength=400, justify="left", font=("Times New Roman", 11))
+        post_label.pack(anchor="w")
+
+        post_button = tk.Button(post_frame, text="View Details", command=lambda p=post: show_post_details(p))
+        post_button.pack(anchor="e", pady=5)
+
+    tk.Button(main_window, text="Back", command=main_window.destroy).pack(pady=10)
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = UserSearchApp(root)

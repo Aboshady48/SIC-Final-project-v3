@@ -5,8 +5,12 @@
         "password": "456",
         "Bio": "hello",
         "friends": [],
-        "friend_requests": [],
-        "posts": [],
+        "friend_requests": [
+            "omnia"
+        ],
+        "posts": [
+            1
+        ],
         "messages_to_you": [],
         "messages_from_you": []
     },
