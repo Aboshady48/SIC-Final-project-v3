@@ -1,6 +1,6 @@
 import json
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox
 from PIL import Image, ImageTk
 
 
@@ -12,13 +12,13 @@ class SocialMediaManager:
 
     def load_data(self):
         try:
-            with open(self.users_file, 'r') as f:
+            with open(self.users_file, 'r', encoding='utf-8') as f:
                 self.users = json.load(f)
         except FileNotFoundError:
             self.users = {}
 
         try:
-            with open(self.posts_file, 'r') as f:
+            with open(self.posts_file, 'r', encoding='utf-8') as f:
                 self.posts = json.load(f)
                 if not isinstance(self.posts, dict):
                     self.posts = {}
@@ -26,14 +26,35 @@ class SocialMediaManager:
             self.posts = {}
 
     def save_data(self):
-        with open(self.users_file, 'w') as f:
-            json.dump(self.users, f, indent=4)
-        with open(self.posts_file, 'w') as f:
-            json.dump(self.posts, f, indent=4)
+        with open(self.users_file, 'w', encoding='utf-8') as f:
+            json.dump(self.users, f, ensure_ascii=False, indent=4)
+        with open(self.posts_file, 'w', encoding='utf-8') as f:
+            json.dump(self.posts, f, ensure_ascii=False, indent=4)
+
+    def quick_sort(self, list):
+        if len(list) <= 1:
+            return list
+        pivot = list[len(list) // 2]
+        left = [x for x in list if x < pivot]
+        middle = [x for x in list if x == pivot]
+        right = [x for x in list if x > pivot]
+        return self.quick_sort(left) + middle + self.quick_sort(right)
+
+    def binary_search(self, myList, target):
+        left, right = 0, len(myList) - 1
+        while left <= right:
+            mid = (left + right) // 2
+            if myList[mid] == target:
+                return True
+            elif myList[mid] < target:
+                left = mid + 1
+            else:
+                right = mid - 1
+        return False
 
     def user_search(self, search_username):
-        usernames = [user.lower() for user in self.users.keys()]
-        if search_username.lower() in usernames:
+        usernames = self.quick_sort(list(self.users.keys()))
+        if self.binary_search(usernames, search_username.lower()):
             return self.users[search_username]
         else:
             return None
@@ -113,7 +134,9 @@ class UserSearchApp:
                 elif post['type'] == "image":
                     tk.Label(post_frame, text="Image Post:").pack(anchor="w")
                     try:
-                        image = Image.open(post['image_path'])
+                        image_path = post['image_path']  # Ensure this is the correct path from JSON
+                        print(f"Loading image from: {image_path}")
+                        image = Image.open(image_path)
                         image = image.resize((200, 200), Image.ANTIALIAS)
                         img = ImageTk.PhotoImage(image)
                         img_label = tk.Label(post_frame, image=img)
@@ -148,7 +171,9 @@ class UserSearchApp:
                 elif post['type'] == "image":
                     tk.Label(post_frame, text="Image Post:").pack(anchor="w")
                     try:
-                        image = Image.open(post['image_path'])
+                        image_path = post['image_path']
+                        print(f"Loading image from: {image_path}")
+                        image = Image.open(image_path)
                         image = image.resize((200, 200), Image.ANTIALIAS)
                         img = ImageTk.PhotoImage(image)
                         img_label = tk.Label(post_frame, image=img)
