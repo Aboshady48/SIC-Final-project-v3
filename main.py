@@ -28,7 +28,6 @@ class SocialMediaManager:
         try:
             with open(self.posts_file, 'r') as f:
                 self.posts = json.load(f)
-                # Ensure it's a list
                 if not isinstance(self.posts, list):
                     self.posts = []
         except FileNotFoundError:
@@ -40,6 +39,30 @@ class SocialMediaManager:
         with open(self.posts_file, 'w') as f:
             json.dump(self.posts, f, indent=4)
 
+    def quick_sort(self, list):
+        if len(list) <= 1:
+            return list
+        pivot = list[len(list) // 2]
+        left = [x for x in list if x < pivot]
+        middle = [x for x in list if x == pivot]
+        right = [x for x in list if x > pivot]
+        return self.quick_sort(left) + middle + self.quick_sort(right)
+
+    def binary_search(self, myList, target):
+        left, right = 0, len(myList) - 1
+        while left <= right:
+            mid = (left + right) // 2
+            if myList[mid] == target:
+                return True
+            elif myList[mid] < target:
+                left = mid + 1
+            else:
+                right = mid - 1
+        return False
+
+    def user_search(self, search_username):
+        usernames = self.quick_sort(list(self.users.keys()))
+        return self.binary_search(usernames, search_username)
 
     def login(self, username, password):
         if username in self.users and self.users[username]['password'] == password:
@@ -132,72 +155,63 @@ class SignupPage(tk.Frame):
             self.controller.show_frame("LoginPage")
         else:
             messagebox.showerror("Register", "Username already exists")
-            
-            
+
 class HomePage(tk.Frame):
     def __init__(self, parent, controller, social_media_manager):
         super().__init__(parent)
         self.controller = controller
         self.social_media_manager = social_media_manager
-        
-        
 
-        # Create the logout button
-        logout_button = tk.Button(self, text="Logout", command=lambda: controller.show_frame("LoginPage"))
-        logout_button.pack(side=tk.TOP, anchor='e')
+        # Logout button
+        tk.Button(self, text="Logout", command=lambda: controller.show_frame("LoginPage")).pack(side=tk.TOP, anchor='e')
 
-        # Create the "Create Post" section
+        # Create post section
         self.create_post_section()
 
-        # Create the posts section
+        # Search user section
+        self.create_search_section()
+
+        # Posts section
         self.create_posts_section()
 
     def create_post_section(self):
-        # Frame for creating a new post
+        # Create post frame
         create_post_frame = tk.Frame(self)
         create_post_frame.pack(pady=10)
 
-        # Input for the username of the post creator
         tk.Label(create_post_frame, text="Username").pack()
         self.username_entry = tk.Entry(create_post_frame)
         self.username_entry.pack()
 
-        # Input for the image path of the post
         tk.Label(create_post_frame, text="Image Path").pack()
         self.image_path_entry = tk.Entry(create_post_frame)
         self.image_path_entry.pack()
 
-        # Button to create a new post
         create_post_button = tk.Button(create_post_frame, text="Create Post", command=self.create_post)
         create_post_button.pack(pady=10)
 
-    def create_post(self):
-        # Get the username and image path from the entries
-        username = self.username_entry.get()
-        image_path = self.image_path_entry.get()
+    def create_search_section(self):
+        # Search user frame
+        search_frame = tk.Frame(self)
+        search_frame.pack(pady=10)
 
-        if not username or not image_path:
-            messagebox.showerror("Error", "Please fill all fields")
-            return
+        tk.Label(search_frame, text="Search for User").pack()
+        self.search_entry = tk.Entry(search_frame)
+        self.search_entry.pack()
 
-        # Create a new post with default likes and an ID
-        new_post = {
-            'author': username,
-            'image_path': image_path,
-            'likes': 0,
-            'post_id': len(self.social_media_manager.posts) + 1  # Simple ID system
-        }
+        search_button = tk.Button(search_frame, text="Search", command=self.search_user)
+        search_button.pack(pady=10)
 
-        # Append the new post to the social media manager and save
-        self.social_media_manager.posts.append(new_post)
-        self.social_media_manager.save_data()
+        self.search_result_label = tk.Label(search_frame, text="")
+        self.search_result_label.pack(pady=10)
 
-        # Clear the input fields
-        self.username_entry.delete(0, tk.END)
-        self.image_path_entry.delete(0, tk.END)
-
-        # Refresh the posts section to show the new post
-        self.refresh()
+    def search_user(self):
+        search_username = self.search_entry.get()
+        found = self.social_media_manager.user_search(search_username)
+        if found:
+            self.search_result_label.config(text=f"User '{search_username}' found!")
+        else:
+            self.search_result_label.config(text=f"User '{search_username}' not found.")
 
     def create_posts_section(self):
         # Display posts
@@ -205,58 +219,24 @@ class HomePage(tk.Frame):
             post_frame = tk.Frame(self)
             post_frame.pack(pady=10)
 
-            # Post Author with Follow button
             author_label = tk.Label(post_frame, text=f"Posted by {post['author']}")
             author_label.pack(side=tk.TOP, anchor='w')
 
-            follow_button = tk.Button(post_frame, text="Follow", command=lambda p=post: self.follow_user(p['author']))
-            follow_button.pack(side=tk.TOP, anchor='e')
-
-            # Post Image
             try:
                 image = Image.open(post['image_path'])
                 image = image.resize((200, 200), Image.ANTIALIAS)
                 photo = ImageTk.PhotoImage(image)
                 image_label = tk.Label(post_frame, image=photo)
-                image_label.image = photo  # Keep a reference to the image
+                image_label.image = photo
                 image_label.pack()
             except Exception as e:
                 tk.Label(post_frame, text="Image not found").pack()
 
-            # Like and Comment buttons
             like_button = tk.Button(post_frame, text=f"Like ({post['likes']})", command=lambda p=post: self.like_post(p['post_id']))
             like_button.pack(side=tk.LEFT, padx=10)
 
-            comment_button = tk.Button(post_frame, text="Comment", command=lambda p=post: self.comment_on_post(p['post_id']))
-            comment_button.pack(side=tk.LEFT, padx=10)
-
-    def follow_user(self, username):
-        # Logic to follow the user
-        print(f"Followed {username}")
-        messagebox.showinfo("Follow", f"You followed {username}")
-
-    def like_post(self, post_id):
-        # Logic to like a post
-        for post in self.social_media_manager.posts:
-            if post['post_id'] == post_id:
-                post['likes'] += 1
-        self.social_media_manager.save_data()
-        self.refresh()
-
-    def comment_on_post(self, post_id):
-        # Logic to comment on a post
-        print(f"Comment on post {post_id}")
-        # Add your comment logic here
-
-    def refresh(self):
-        # Clear existing posts and recreate the section
-        for widget in self.winfo_children():
-            widget.destroy()
-
-        # Recreate the post creation and posts section
-        self.create_post_section()
-        self.create_posts_section()
-
+    def create_post(self):
+        username = self.username
 if __name__ == "__main__":
     smm = SocialMediaManager()
     app = MainApp(smm)

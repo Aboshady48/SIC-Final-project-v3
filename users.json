@@ -1,17 +1,35 @@
 {
-    "mohamed": {
-        "username": "mohamed",
-        "email": "abohsady@gmail.com",
-        "password": "Ava"
+    "omnia": {
+        "username": "omnia",
+        "email": "omnia@gmail.com",
+        "password": "456",
+        "Bio": "hello",
+        "friends": [],
+        "friend_requests": [],
+        "posts": [],
+        "messages_to_you": [],
+        "messages_from_you": []
     },
-    "a": {
-        "username": "a",
-        "email": "a@gmail.com",
-        "password": "a"
+    "user1": {
+        "username": "user1",
+        "email": "user1@gmail.com",
+        "password": "123",
+        "Bio": "this is user1",
+        "friends": [],
+        "friend_requests": [],
+        "posts": [],
+        "messages_to_you": [],
+        "messages_from_you": []
     },
-    "aa": {
-        "username": "aa",
-        "email": "a@gmaiol.com",
-        "password": "aa"
+    "user2": {
+        "username": "user2",
+        "email": "user2@gmail.com",
+        "password": "122",
+        "Bio": "iam user2",
+        "friends": [],
+        "friend_requests": [],
+        "posts": [],
+        "messages_to_you": [],
+        "messages_from_you": []
     }
 }
