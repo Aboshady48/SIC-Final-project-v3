@@ -1,13 +1,67 @@
 {
     "1": {
-        "author": "omnia",
+        "author": "user2",
         "post_id": 1,
         "likes": 1,
         "liked_by": [
             "omnia"
         ],
+        "comments": [
+            {
+                "user": "user2",
+                "comment": "hi"
+            },
+            {
+                "user": "user2",
+                "comment": "me me"
+            },
+            {
+                "user": "omnia",
+                "comment": "it's a good post"
+            }
+        ],
+        "type": "image",
+        "image_path": "C:/sic/Social_Media Project/Screenshot 2024-05-08 165819.png"
+    },
+    "2": {
+        "author": "user2",
+        "post_id": 2,
+        "likes": 1,
+        "liked_by": [],
+        "comments": [
+            {
+                "user": "user2",
+                "comment": "me too"
+            }
+        ],
+        "type": "text",
+        "content": "i'm a student in CS "
+    },
+    "3": {
+        "author": "omnia",
+        "post_id": 3,
+        "likes": 0,
+        "liked_by": [],
         "comments": [],
         "type": "image",
-        "image_path": "D:/DATA/SIC/Final project 3/360_F_391461057_5P0BOWl4lY442Zoo9rzEeJU0S2c1WDZR.jpg"
+        "image_path": "C:/sic/Social_Media Project/Screenshot 2024-05-08 165835.png"
+    },
+    "4": {
+        "author": "user2",
+        "post_id": 4,
+        "likes": 0,
+        "liked_by": [],
+        "comments": [],
+        "type": "text",
+        "content": "the final text post"
+    },
+    "5": {
+        "author": "omnia",
+        "post_id": 5,
+        "likes": 0,
+        "liked_by": [],
+        "comments": [],
+        "type": "image",
+        "image_path": "C:/sic/Social_Media Project/Screenshot 2024-05-08 165835.png"
     }
 }
