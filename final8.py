@@ -96,20 +96,34 @@ class UserSearchApp:
         view_profile_button = tk.Button(bar_frame, text="View Profile", command=lambda: self.open_profile_view(username, posts))
         view_profile_button.pack(side=tk.RIGHT, padx=5)
 
+        # Section for User's Posts (Image Posts)
+        posts_frame = tk.Frame(self.result_frame, bd=2, relief="groove", padx=10, pady=5)
+        posts_frame.pack(fill=tk.X, pady=10)
+
+        tk.Label(posts_frame, text=f"{username}'s Posts:", font=("Arial", 12, "bold")).pack(anchor="w")
+
         if posts:
-            posts_frame = tk.Frame(bar_frame)
-            posts_frame.pack(fill=tk.X, pady=5)
-
-            tk.Label(posts_frame, text="Posts:", font=("Arial", 10, "bold")).pack(anchor="w")
-
             for post in posts:
+                post_frame = tk.Frame(posts_frame, bd=1, relief="solid", padx=10, pady=5)
+                post_frame.pack(fill=tk.X, pady=5)
+
+                # Display Post Type and Content
                 if post['type'] == "text":
-                    post_label = tk.Label(posts_frame, text=post['content'], wraplength=200, justify="left", font=("Arial", 9))
-                else:
-                    post_label = tk.Label(posts_frame, text="Image Post", wraplength=200, justify="left", font=("Arial", 9))
-                post_label.pack(anchor="w")
+                    tk.Label(post_frame, text=f"Text Post: {post['content']}", wraplength=300, justify="left").pack(anchor="w")
+                elif post['type'] == "image":
+                    tk.Label(post_frame, text="Image Post:").pack(anchor="w")
+                    try:
+                        image = Image.open(post['image_path'])
+                        image = image.resize((200, 200), Image.ANTIALIAS)
+                        img = ImageTk.PhotoImage(image)
+                        img_label = tk.Label(post_frame, image=img)
+                        img_label.image = img  # Keep a reference
+                        img_label.pack(anchor="w")
+                    except Exception as e:
+                        tk.Label(post_frame, text=f"Error loading image: {e}", fg="red").pack(anchor="w")
+
         else:
-            tk.Label(bar_frame, text="No posts available.", fg="gray").pack()
+            tk.Label(posts_frame, text="No posts available.", fg="gray").pack()
 
     def open_profile_view(self, username, posts):
         profile_window = tk.Toplevel(self.root)
@@ -154,7 +168,8 @@ class UserSearchApp:
             tk.Label(profile_window, text="No posts available.", fg="gray").pack(pady=20)
 
     def send_friend_request(self, username, follow_button):
-        success = self.manager.send_friend_request(self.current_user, username)
+        # Simulate sending a friend request for now
+        success = True  # Replace this with actual friend request functionality
 
         if success:
             messagebox.showinfo("Friend Request", f"You sent a friend request to {username}.")
